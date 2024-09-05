@@ -170,6 +170,54 @@ export class PumpFunSDK {
     return sellResults;
   }
 
+  async buyAndSell(
+    buyerSeller: Keypair,
+    mint: PublicKey,
+    buyAmountSol: bigint,
+    slippageBasisPoints: bigint = 500n,
+    priorityFees?: PriorityFee,
+    commitment: Commitment = DEFAULT_COMMITMENT,
+    finality: Finality = DEFAULT_FINALITY
+  ): Promise<TransactionResult> {
+    let bondingCurveAccount = await this.getBondingCurveAccount(
+      mint,
+      commitment
+    );
+    if (!bondingCurveAccount) {
+      throw new Error(`Bonding curve account not found: ${mint.toBase58()}`);
+    }
+
+    let buyAmount = bondingCurveAccount.getBuyPrice(buyAmountSol);
+    let buyAmountWithSlippage = calculateWithSlippageBuy(
+      buyAmountSol,
+      slippageBasisPoints
+    );
+
+    let globalAccount = await this.getGlobalAccount(commitment);
+
+    let tx = await this.getBuyInstructions(
+      buyerSeller.publicKey,
+      mint,
+      globalAccount.feeRecipient,
+      buyAmount,
+      buyAmountWithSlippage
+    );
+
+    tx.add(await this.getSellInstructionsByTokenAmount(buyerSeller.publicKey, mint, buyAmount, slippageBasisPoints, commitment));
+
+    let buyAndSellResults = await sendTx(
+      this.connection,
+      tx,
+      buyerSeller.publicKey,
+      [buyerSeller],
+      priorityFees,
+      commitment,
+      finality
+    );
+
+    return buyAndSellResults;
+  }
+
   //create token instructions
   async getCreateInstructions(
     creator: PublicKey,
