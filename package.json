@@ -8,8 +8,9 @@
   "browser": "./dist/browser/index.js",
   "types": "dist/cjs/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rimraf dist/ && npm run build:node && npm run build:browser",
+    "compile": "tsc && tsc -p tsconfig.cjs.json",
+    "prepare": "npm run compile",
+    "build": "npm run build:node && npm run build:browser",
     "build:node": "tsc && tsc -p tsconfig.cjs.json",
     "build:browser": "rollup -c rollup.config.js --bundleConfigAsCjs"
   },
