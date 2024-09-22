@@ -118,6 +118,7 @@ export class PumpFunSDK {
     buyAmountSol: bigint,
     slippageBasisPoints: bigint = 500n,
     priorityFees?: PriorityFee,
+    feeRecipient?: PublicKey,
     commitment: Commitment = DEFAULT_COMMITMENT,
     finality: Finality = DEFAULT_FINALITY
   ): Promise<TransactionResult> {
@@ -125,6 +126,7 @@ export class PumpFunSDK {
       buyer.publicKey,
       mint,
       buyAmountSol,
+      feeRecipient,
       slippageBasisPoints,
       commitment
     );
@@ -176,6 +178,7 @@ export class PumpFunSDK {
     buyAmountSol: bigint,
     slippageBasisPoints: bigint = 500n,
     priorityFees?: PriorityFee,
+    feeRecipient?: PublicKey,
     commitment: Commitment = DEFAULT_COMMITMENT,
     finality: Finality = DEFAULT_FINALITY
   ): Promise<TransactionResult> {
@@ -198,7 +201,7 @@ export class PumpFunSDK {
     let tx = await this.getBuyInstructions(
       buyerSeller.publicKey,
       mint,
-      globalAccount.feeRecipient,
+      feeRecipient ? feeRecipient : globalAccount.feeRecipient,
       buyAmount,
       buyAmountWithSlippage
     );
@@ -259,6 +262,7 @@ export class PumpFunSDK {
     buyer: PublicKey,
     mint: PublicKey,
     buyAmountSol: bigint,
+    feeRecipient?: PublicKey,
     slippageBasisPoints: bigint = 500n,
     commitment: Commitment = DEFAULT_COMMITMENT
   ) {
@@ -281,7 +285,7 @@ export class PumpFunSDK {
     return await this.getBuyInstructions(
       buyer,
       mint,
-      globalAccount.feeRecipient,
+      feeRecipient ? feeRecipient: globalAccount.feeRecipient,
       buyAmount,
       buyAmountWithSlippage
     );
