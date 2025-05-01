@@ -11,7 +11,7 @@ import {
   VersionedTransaction,
   VersionedTransactionResponse,
 } from "@solana/web3.js";
-import { PriorityFee, TransactionResult } from "./types";
+import { PriorityFee, TransactionResult } from "./types.js";
 
 export const DEFAULT_COMMITMENT: Commitment = "finalized";
 export const DEFAULT_FINALITY: Finality = "finalized";
@@ -79,7 +79,7 @@ export async function sendTx(
   } catch (e) {
     if (e instanceof SendTransactionError) {
       let ste = e as SendTransactionError;
-      console.log(await ste.getLogs(connection));
+      console.log("SendTransactionError" + await ste.getLogs(connection));
     } else {
       console.error(e);
     }

@@ -4,7 +4,7 @@ import {
   CreateEvent,
   SetParamsEvent,
   TradeEvent,
-} from "./types";
+} from "./types.js";
 
 export function toCreateEvent(event: CreateEvent): CreateEvent {
   return {
@@ -22,7 +22,7 @@ export function toCompleteEvent(event: CompleteEvent): CompleteEvent {
     user: new PublicKey(event.user),
     mint: new PublicKey(event.mint),
     bondingCurve: new PublicKey(event.bondingCurve),
-    timestamp: event.timestamp,
+    timestamp: Number(event.timestamp),
   };
 }
 

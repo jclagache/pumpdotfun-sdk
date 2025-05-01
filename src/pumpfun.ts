@@ -7,7 +7,7 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import { Program, Provider } from "@coral-xyz/anchor";
-import { GlobalAccount } from "./globalAccount";
+import { GlobalAccount } from "./globalAccount.js";
 import {
   CompleteEvent,
   CreateEvent,
@@ -18,19 +18,19 @@ import {
   SetParamsEvent,
   TradeEvent,
   TransactionResult,
-} from "./types";
+} from "./types.js";
 import {
   toCompleteEvent,
   toCreateEvent,
   toSetParamsEvent,
   toTradeEvent,
-} from "./events";
+} from "./events.js";
 import {
   createAssociatedTokenAccountInstruction,
   getAccount,
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
-import { BondingCurveAccount } from "./bondingCurveAccount";
+import { BondingCurveAccount } from "./bondingCurveAccount.js";
 import { BN } from "bn.js";
 import {
   DEFAULT_COMMITMENT,
@@ -38,8 +38,8 @@ import {
   calculateWithSlippageBuy,
   calculateWithSlippageSell,
   sendTx,
-} from "./util";
-import { PumpFun, IDL } from "./IDL";
+} from "./util.js";
+import { PumpFun, IDL } from "./IDL/index.js";
 const PROGRAM_ID = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
 const MPL_TOKEN_METADATA_PROGRAM_ID =
   "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
@@ -59,7 +59,7 @@ export class PumpFunSDK {
     this.connection = this.program.provider.connection;
   }
 
-  async createAndBuy(
+  async createAndBuy (
     creator: Keypair,
     mint: Keypair,
     createTokenMetadata: CreateTokenMetadata,
@@ -244,7 +244,7 @@ export class PumpFunSDK {
     );
 
     return this.program.methods
-      .create(name, symbol, uri)
+      .create(name, symbol, uri, creator)
       .accounts({
         mint: mint.publicKey,
         associatedBondingCurve: associatedBondingCurve,
@@ -441,22 +441,56 @@ export class PumpFunSDK {
   }
 
   async createTokenMetadata(create: CreateTokenMetadata) {
-    let formData = new FormData();
-    formData.append("file", create.file),
-    formData.append("name", create.name),
-    formData.append("symbol", create.symbol),
-    formData.append("description", create.description),
-    formData.append("twitter", create.twitter || ""),
-    formData.append("telegram", create.telegram || ""),
-    formData.append("website", create.website || ""),
-    formData.append("showName", "true");
-    let request = await fetch("https://pump.fun/api/ipfs", {
-      method: "POST",
-      body: formData,
-    });
-    return request.json();
-  }
+    // Validate file
+    if (!(create.file instanceof Blob)) {
+        throw new Error('File must be a Blob or File object');
+    }
 
+    let formData = new FormData();
+    formData.append("file", create.file, 'image.png'); // Add filename
+    formData.append("name", create.name);
+    formData.append("symbol", create.symbol);
+    formData.append("description", create.description);
+    formData.append("twitter", create.twitter || "");
+    formData.append("telegram", create.telegram || "");
+    formData.append("website", create.website || "");
+    formData.append("showName", "true");
+
+    try {
+        const request = await fetch("https://pump.fun/api/ipfs", {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+            },
+            body: formData,
+            credentials: 'same-origin'
+        });
+
+        if (request.status === 500) {
+            // Try to get more error details
+            const errorText = await request.text();
+            throw new Error(`Server error (500): ${errorText || 'No error details available'}`);
+        }
+
+        if (!request.ok) {
+            throw new Error(`HTTP error! status: ${request.status}`);
+        }
+
+        const responseText = await request.text();
+        if (!responseText) {
+            throw new Error('Empty response received from server');
+        }
+
+        try {
+            return JSON.parse(responseText);
+        } catch (e) {
+            throw new Error(`Invalid JSON response: ${responseText}`);
+        }
+    } catch (error) {
+        console.error('Error in createTokenMetadata:', error);
+        throw error;
+    }
+}
   //EVENTS
   addEventListener<T extends PumpFunEventType>(
     eventType: T,
@@ -494,7 +528,6 @@ export class PumpFunSDK {
               slot,
               signature
             );
-            console.log("completeEvent", event, slot, signature);
             break;
           case "setParamsEvent":
             processedEvent = toSetParamsEvent(event as SetParamsEvent);
