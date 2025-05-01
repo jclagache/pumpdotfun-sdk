@@ -11,13 +11,30 @@ const external = [
 ];
 
 const plugins = [
-  commonjs(),
+  commonjs({
+    include: /node_modules/,
+    transformMixedEsModules: true,
+    requireReturnsDefault: 'auto',
+    esmExternals: true
+  }),
   json(),
   nodeResolve({
     extensions: [".js", ".ts"],
     preferBuiltins: false,
   }),
 ];
+
+const onwarn = (warning, warn) => {
+  // Skip circular dependency warnings
+  if (warning.code === 'CIRCULAR_DEPENDENCY') return;
+  warn(warning);
+};
+
+const treeshake = {
+  moduleSideEffects: false,
+  propertyReadSideEffects: false,
+  tryCatchDeoptimization: false
+};
 
 export default [
   // ESM build
@@ -37,11 +54,13 @@ export default [
         tsconfig: "./tsconfig.base.json",
         outDir: "./dist/esm",
         outputToFilesystem: false,
-		sourceMap: true,
-		inlineSources: true,
+        sourceMap: true,
+        inlineSources: true,
       }),
     ],
     external,
+    onwarn,
+    treeshake
   },
   // CommonJS build
   {
@@ -61,11 +80,13 @@ export default [
         tsconfig: "./tsconfig.base.json",
         outDir: "./dist/cjs",
         outputToFilesystem: false,
-		sourceMap: true,
-		inlineSources: true,
+        sourceMap: true,
+        inlineSources: true,
       }),
     ],
     external,
+    onwarn,
+    treeshake
   },
   // Browser build
   {
@@ -76,7 +97,12 @@ export default [
       sourcemap: true,
     },
     plugins: [
-      commonjs(),
+      commonjs({
+        include: /node_modules/,
+        transformMixedEsModules: true,
+        requireReturnsDefault: 'auto',
+        esmExternals: true
+      }),
       json(),
       nodeResolve({
         browser: true,
@@ -94,6 +120,8 @@ export default [
       }),
     ],
     external,
+    onwarn,
+    treeshake
   },
   // Browser build with external bundle
   {
@@ -104,7 +132,12 @@ export default [
       sourcemap: true,
     },
     plugins: [
-      commonjs(),
+      commonjs({
+        include: /node_modules/,
+        transformMixedEsModules: true,
+        requireReturnsDefault: 'auto',
+        esmExternals: true
+      }),
       json(),
       nodeResolve({
         browser: true,
@@ -121,5 +154,7 @@ export default [
         }
       }),
     ],
+    onwarn,
+    treeshake
   },
 ];
