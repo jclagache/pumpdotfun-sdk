@@ -440,6 +440,21 @@ export class PumpFunSDK {
     )[0];
   }
 
+  /**
+   * Checks if an SPL token is tradable on pump.fun
+   * @param mint The public key of the token mint to check
+   * @returns Promise<boolean> True if the token is tradable, false otherwise
+   */
+  async isTradable(mint: PublicKey): Promise<boolean> {
+    try {
+      const bondingCurveAccount = await this.getBondingCurveAccount(mint);
+      return bondingCurveAccount !== null;
+    } catch (error) {
+      console.error('Error checking if token is tradable:', error);
+      return false;
+    }
+  }
+
   async createTokenMetadata(create: CreateTokenMetadata) {
     // Validate file
     if (!(create.file instanceof Blob)) {
