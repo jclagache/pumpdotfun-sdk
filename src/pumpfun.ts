@@ -444,7 +444,7 @@ export class PumpFunSDK {
    * Checks if an SPL token is tradable on pump.fun
    * @param mint The public key of the token mint to check
    * @param connection The Solana connection to use
-   * @returns Promise<boolean> True if the token is tradable, false otherwise
+   * @returns Promise<boolean> True if the token is tradable and not complete, false otherwise
    */
   static async isTradable(mint: PublicKey, connection: Connection): Promise<boolean> {
     try {
@@ -454,7 +454,12 @@ export class PumpFunSDK {
       );
 
       const tokenAccount = await connection.getAccountInfo(bondingCurvePDA);
-      return tokenAccount !== null;
+      if (!tokenAccount) {
+        return false;
+      }
+
+      const bondingCurveAccount = BondingCurveAccount.fromBuffer(tokenAccount.data);
+      return !bondingCurveAccount.complete;
     } catch (error) {
       console.error('Error checking if token is tradable:', error);
       return false;
